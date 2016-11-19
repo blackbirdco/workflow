@@ -12,6 +12,7 @@ module Workflow
       @states = Hash.new
       @meta = meta
       instance_eval(&specification)
+      assign_parents_to_states
     end
 
     def state_names
@@ -38,6 +39,17 @@ module Workflow
       @scoped_state.events.push(
         name, Workflow::Event.new(name, target, condition, (args[:meta] or {}), &action)
       )
+    end
+
+    def assign_parents_to_states
+      @states.each do |state_name, state|
+        state.events.each do |event_name, events|
+          events.each do |event|
+            next if @states[event.transitions_to].nil?
+            @states[event.transitions_to].parents << state_name
+          end
+        end
+      end
     end
 
     def on_entry(&proc)
